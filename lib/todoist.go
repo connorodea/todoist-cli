@@ -77,8 +77,9 @@ func (c *Client) doApi(ctx context.Context, method string, uri string, params ur
 	c.Log("response: %#v", resp)
 
 	if resp.StatusCode != http.StatusOK {
-		c.Log(ParseAPIError("bad request", resp).Error())
-		return ParseAPIError("bad request", resp)
+		apiErr := ParseAPIError("bad request", resp)
+		c.Log("%s", apiErr.Error())
+		return apiErr
 	} else if res == nil {
 		return nil
 	}
@@ -125,8 +126,58 @@ func (c *Client) doRestApi(ctx context.Context, method string, uri string, body 
 	c.Log("response: %#v", resp)
 
 	if resp.StatusCode != http.StatusOK {
-		c.Log(ParseAPIError("bad request", resp).Error())
-		return ParseAPIError("bad request", resp)
+		apiErr := ParseAPIError("bad request", resp)
+		c.Log("%s", apiErr.Error())
+		return apiErr
+	} else if res == nil {
+		return nil
+	}
+	return json.NewDecoder(resp.Body).Decode(&res)
+}
+
+func (c *Client) doRestV2Api(ctx context.Context, method string, uri string, body interface{}, res interface{}) error {
+	c.Log("doRestV2Api: called")
+	u, err := url.Parse(RestServer)
+	if err != nil {
+		return err
+	}
+	u.Path = path.Join(u.Path, uri)
+
+	c.Log("config: %#v", c.config)
+
+	var bodyReader io.Reader
+	if body != nil {
+		jsonData, err := json.Marshal(body)
+		if err != nil {
+			return err
+		}
+		bodyReader = strings.NewReader(string(jsonData))
+	}
+
+	req, err := http.NewRequest(method, u.String(), bodyReader)
+	if err != nil {
+		return err
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+c.config.AccessToken)
+	req = req.WithContext(ctx)
+
+	c.Log("request: %#v", req)
+	c.Log("request.URL: %#v", req.URL)
+
+	resp, err := c.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	c.Log("response: %#v", resp)
+
+	if resp.StatusCode != http.StatusOK {
+		apiErr := ParseAPIError("bad request", resp)
+		c.Log("%s", apiErr.Error())
+		return apiErr
 	} else if res == nil {
 		return nil
 	}

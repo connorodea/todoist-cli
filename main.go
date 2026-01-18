@@ -62,7 +62,7 @@ func main() {
 		Aliases: []string{"L"},
 		Usage:   "label names (separated by ,)",
 	}
-	projectIDFlag := cli.IntFlag{
+	projectIDFlag := cli.StringFlag{
 		Name:    "project-id",
 		Aliases: []string{"P"},
 		Usage:   "project id",
@@ -328,6 +328,21 @@ func main() {
 				},
 			},
 			ArgsUsage: "<Project name>",
+		},
+		{
+			Name:    "add-section",
+			Aliases: []string{"as"},
+			Usage:   "Add new section",
+			Action:  AddSection,
+			Flags: []cli.Flag{
+				&projectIDFlag,
+				&projectNameFlag,
+				&cli.IntFlag{
+					Name:  "order",
+					Usage: "Order index",
+				},
+			},
+			ArgsUsage: "<Section name>",
 		},
 		{
 			Name:      "karma",
